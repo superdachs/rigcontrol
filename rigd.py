@@ -52,6 +52,7 @@ def setup_camera():
 def main():
     setup_camera()
     while True:
+        #TODO: check if camera is still present. if not reset and run setup again
         sleep(5)
 
 
