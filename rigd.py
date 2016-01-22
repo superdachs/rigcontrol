@@ -1,13 +1,14 @@
-#/usr/bin/env python3
+#!/usr/bin/env python3
 
 # daemon for controling the rig
 
-from time import import sleep
-from daemonize import import Daemonize
+from time import sleep
+from daemonize import Daemonize
 import os
 import sys
 import logging
 import datetime
+import gphoto2 as gp
 
 app = "rigd"
 pdir = os.path.join('tmp', app)
@@ -28,12 +29,31 @@ logger.addHandler(logfile)
 
 keep_fds = [logfile.stream.fileno()]
 
+camera = None
+
 def setup_camera():
-    pass
+    logger.debug("searching camera...")
+    context = gp.Context()
+    camera = gp.Camera()
+    while True:
+        try:
+            camera.init(context)
+        except gp.GPhoto2Error as e:
+            if e.code == gp.GP_ERROR_MODEL_NOT_FOUND:
+                sleep(2)
+                continue
+            raise
+        break
+    abilities = gp.check_result(gp.gp_camera_get_abilities(camera))
+    model = abilities.model
+    logger.info("camera %s found." % model)
+    
 
 def main():
+    setup_camera()
     while True:
         sleep(5)
+
 
 daemon = Daemonize(app=app, pid=pid, action=main, keep_fds=keep_fds)
 daemon.start()
